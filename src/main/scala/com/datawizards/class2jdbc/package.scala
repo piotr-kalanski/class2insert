@@ -51,6 +51,12 @@ package object class2jdbc {
   implicit val bigIntEnc: JdbcEncoder[BigInt] =
     createEncoder(num => List(num.toString))
 
+  implicit def optionEncoder[T](implicit innerEncoder: JdbcEncoder[T]): JdbcEncoder[Option[T]] = new JdbcEncoder[Option[T]] {
+    def encode(value: Option[T]): List[String] =
+      if(value.isEmpty) List("null")
+      else innerEncoder.encode(value.get)
+  }
+
   implicit val hnilEncoder: JdbcEncoder[HNil] =
     createEncoder(hnil => Nil)
 

@@ -16,21 +16,30 @@ package object jdbc2class {
   }
 
   class SelectTable[T] {
-    def apply[L <: HList](connection: Connection)(implicit
-                                                  ct: ClassTag[T],
-                                                  gen: Generic.Aux[T, L],
-                                                  fromRow: FromRow[L]
-    ): (Iterable[T], Iterable[Throwable]) = {
-      this.apply(connection, ct.runtimeClass.getName)
-    }
+    def apply[L <: HList](connection: Connection)
+                         (implicit
+                            ct: ClassTag[T],
+                            gen: Generic.Aux[T, L],
+                            fromRow: FromRow[L]
+    ): (Iterable[T], Iterable[Throwable]) =
+      this.apply(connection, ct.runtimeClass.getName, Seq.empty)
 
-    def apply[L <: HList](connection: Connection, table: String)(implicit
-                                                                 ct: ClassTag[T],
-                                                                 gen: Generic.Aux[T, L],
-                                                                 fromRow: FromRow[L]
+    def apply[L <: HList](connection: Connection, table: String)
+                         (implicit
+                            ct: ClassTag[T],
+                            gen: Generic.Aux[T, L],
+                            fromRow: FromRow[L]
+    ): (Iterable[T], Iterable[Throwable]) =
+      this.apply(connection, table, Seq.empty)
+
+    def apply[L <: HList](connection: Connection, table: String, columns: Iterable[String])
+                         (implicit
+                           ct: ClassTag[T],
+                           gen: Generic.Aux[T, L],
+                           fromRow: FromRow[L]
     ): (Iterable[T], Iterable[Throwable]) = {
       val rs = connection.createStatement().executeQuery(s"SELECT * FROM $table")
-      parseResultSet[T](rs)
+      parseResultSet[T](rs, columns)
     }
   }
 
@@ -39,7 +48,7 @@ package object jdbc2class {
   }
 
   trait ParseResultSet[T] {
-    def apply[L <: HList](rs: ResultSet)
+    def apply[L <: HList](rs: ResultSet, columns: Iterable[String])
                          (implicit
                           ct: ClassTag[T],
                           gen: Generic.Aux[T, L],
@@ -48,9 +57,12 @@ package object jdbc2class {
       val rowParserFor = new RowParser[T] {}
       val convertedLines = new ListBuffer[Try[T]]
       val metadata = rs.getMetaData
+      val resultColumns = (for(i <- 1 to metadata.getColumnCount) yield metadata.getColumnName(i)).toSet
       val columnCount = metadata.getColumnCount
       while(rs.next()) {
-        val row = (1 to columnCount).map(i => rs.getString(i))
+        val row =
+          if(columns.isEmpty) (1 to columnCount).map(i => rs.getString(i))
+          else columns.map(c => if(resultColumns.contains(c)) rs.getString(c) else "")
         convertedLines += rowParserFor(row.toList)
       }
 

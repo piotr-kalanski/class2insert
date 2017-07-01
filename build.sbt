@@ -2,7 +2,7 @@ name := "class2sql"
 
 organization := "com.github.piotr-kalanski"
 
-version := "0.1.1"
+version := "0.1.2"
 
 scalaVersion := "2.11.8"
 
@@ -28,7 +28,7 @@ developers := List(
 
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.3.2",
-  "com.github.piotr-kalanski" %% "csv2class" % "0.2.1",
+  "com.github.piotr-kalanski" %% "csv2class" % "0.3.1",
   "junit" % "junit" % "4.10" % "test",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
   "com.h2database" % "h2" % "1.4.195" % "test"

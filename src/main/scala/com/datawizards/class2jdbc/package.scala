@@ -48,6 +48,9 @@ package object class2jdbc {
   implicit val dateEnc: JdbcEncoder[Date] =
     createEncoder(date => List("'" + date.toString + "'"))
 
+  implicit val dateSqlEnc: JdbcEncoder[java.sql.Date] =
+    createEncoder(date => List("'" + date.toString + "'"))
+
   implicit val bigIntEnc: JdbcEncoder[BigInt] =
     createEncoder(num => List(num.toString))
 

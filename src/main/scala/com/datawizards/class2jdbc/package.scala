@@ -19,7 +19,7 @@ package object class2jdbc {
     }
 
   implicit val stringEnc: JdbcEncoder[String] =
-    createEncoder(str => List("'" + str + "'"))
+    createEncoder(str => List("'" + str.replaceAll("'", "''") + "'"))
 
   implicit val intEnc: JdbcEncoder[Int] =
     createEncoder(num => List(num.toString))
@@ -56,7 +56,7 @@ package object class2jdbc {
 
   implicit def optionEncoder[T](implicit innerEncoder: JdbcEncoder[T]): JdbcEncoder[Option[T]] = new JdbcEncoder[Option[T]] {
     def encode(value: Option[T]): List[String] =
-      if(value.isEmpty) List("null")
+      if (value.isEmpty) List("null")
       else innerEncoder.encode(value.get)
   }
 
@@ -67,7 +67,7 @@ package object class2jdbc {
                                             implicit
                                             hEncoder: Lazy[JdbcEncoder[H]],
                                             tEncoder: JdbcEncoder[T]
-                                          ): JdbcEncoder[H :: T] = createEncoder {
+                                            ): JdbcEncoder[H :: T] = createEncoder {
     case h :: t =>
       hEncoder.value.encode(h) ++ tEncoder.encode(t)
   }
@@ -76,26 +76,26 @@ package object class2jdbc {
                                      implicit
                                      gen: Generic.Aux[A, R],
                                      rEncoder: Lazy[JdbcEncoder[R]]
-                                   ): JdbcEncoder[A] = createEncoder { value =>
+                                     ): JdbcEncoder[A] = createEncoder { value =>
     rEncoder.value.encode(gen.to(value))
   }
 
   def generateInserts[T](data: Traversable[T], table: String, columns: Seq[String])
                         (implicit encoder: JdbcEncoder[T]): Traversable[String] = {
-    val insertPrefix = "INSERT INTO " + table + "(" + columns.mkString(",") + ")"  + " VALUES("
+    val insertPrefix = "INSERT INTO " + table + "(" + columns.mkString(",") + ")" + " VALUES("
 
     data
       .map(e => insertPrefix + encoder.encode(e).mkString(",") + ")")
   }
 
   def generateInserts[T](data: Traversable[T], table: String)
-                        (implicit ct:ClassTag[T], encoder: JdbcEncoder[T]): Traversable[String] = {
+                        (implicit ct: ClassTag[T], encoder: JdbcEncoder[T]): Traversable[String] = {
     val klass = ct.runtimeClass
     generateInserts(data, table, klass.getDeclaredFields.map(_.getName))
   }
 
   def generateInserts[T](data: Traversable[T])
-                        (implicit ct:ClassTag[T], encoder: JdbcEncoder[T]): Traversable[String] = {
+                        (implicit ct: ClassTag[T], encoder: JdbcEncoder[T]): Traversable[String] = {
     val klass = ct.runtimeClass
     val table = klass.getSimpleName
     val columns = klass.getDeclaredFields.map(_.getName)

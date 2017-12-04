@@ -19,7 +19,7 @@ package object class2jdbc {
     }
 
   implicit val stringEnc: JdbcEncoder[String] =
-    createEncoder(str => if (str != null) List("'" + str.replaceAll("'", "''") + "'") else List())
+    createEncoder(str => if (str != null) List("'" + str.replaceAll("'", "''") + "'") else List("'" + "'"))
 
   implicit val intEnc: JdbcEncoder[Int] =
     createEncoder(num => List(num.toString))

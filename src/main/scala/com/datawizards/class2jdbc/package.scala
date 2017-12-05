@@ -14,8 +14,9 @@ package object class2jdbc {
 
   def createEncoder[A](func: A => List[String]): JdbcEncoder[A] =
     new JdbcEncoder[A] {
-      def encode(value: A): List[String] =
-        func(value)
+      def encode(value: A): List[String] = {
+        if(value == null) List("null") else func(value)
+      }
     }
 
   implicit val stringEnc: JdbcEncoder[String] =
